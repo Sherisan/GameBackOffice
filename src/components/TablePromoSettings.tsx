@@ -70,13 +70,19 @@ export function TableSettings({
   readOnly: boolean;
   games: PromoGame[];
 }) {
+  // Card games sell cards; Fortune Isle sells plays. The wording follows the games picked.
+  const isle = games.some((g) => g.engine === 'Island' && promo.gameIds.includes(g.gameId));
+  const cardGames = games.some((g) => g.engine === 'Instant' && promo.gameIds.includes(g.gameId));
+  const unit = isle && !cardGames ? 'play' : isle ? 'card / play' : 'card';
+  const units = isle && !cardGames ? 'plays' : isle ? 'cards / plays' : 'cards';
+
   if (promo.mystery) {
     const m = promo.mystery;
     const up = (patch: Partial<typeof m>) => set({ mystery: { ...m, ...patch } });
     return (
       <Card title="Mystery prize">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Chance per card (%)" hint={m.chance > 0 ? `About one card in ${Math.round(1 / m.chance)}.` : undefined}>
+          <Field label={`Chance per ${unit} (%)`} hint={m.chance > 0 ? `About one ${unit} in ${Math.round(1 / m.chance)}.` : undefined}>
             <NumberInput value={Math.round(m.chance * 10000) / 100} disabled={readOnly} onChange={(v) => up({ chance: (v ?? 0) / 100 })} />
           </Field>
           <PrizeFields
@@ -89,7 +95,7 @@ export function TableSettings({
           />
         </div>
         <p className="mt-4 text-sm text-ink-400">
-          Each paid card of at least the min qualifying stake has this chance to reveal the hidden prize on top of what the card pays.
+          Each paid {unit} of at least the min qualifying stake has this chance to reveal the hidden prize on top of what it pays.
         </p>
       </Card>
     );
@@ -101,18 +107,18 @@ export function TableSettings({
     return (
       <Card title="Buy X, get one free">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Paid cards per free card">
+          <Field label={`Paid ${units} per free one`}>
             <NumberInput value={b.buy} disabled={readOnly} onChange={(v) => up({ buy: int(v) })} />
           </Field>
-          <Field label="Most free cards per player per day">
+          <Field label={`Most free ${units} per player per day`}>
             <NumberInput value={b.maxFreePerDay} disabled={readOnly} onChange={(v) => up({ maxFreePerDay: int(v) })} />
           </Field>
-          <Field label="Free card valid for (days)">
+          <Field label={`Free ${unit} valid for (days)`}>
             <NumberInput value={b.freeBetValidDays} disabled={readOnly} onChange={(v) => up({ freeBetValidDays: int(v) })} />
           </Field>
         </div>
         <p className="mt-4 text-sm text-ink-400">
-          Every {b.buy} paid cards earn a free card at the price of the card that completed the set. Free cards pay their full prize.
+          Every {b.buy} paid {units} earn a free one at the price of the {unit} that completed the set. Free {units} pay their full prize.
         </p>
       </Card>
     );
@@ -131,7 +137,7 @@ export function TableSettings({
               onChange={(t) => up({ symbols: t.split(',').map((s) => s.trim()).filter(Boolean) })}
             />
           </Field>
-          <Field label="Chance a card carries a symbol (%)">
+          <Field label={`Chance a ${unit} carries a symbol (%)`}>
             <NumberInput value={Math.round(c.chancePerCard * 10000) / 100} disabled={readOnly} onChange={(v) => up({ chancePerCard: (v ?? 0) / 100 })} />
           </Field>
           <Field label="Sets per player" hint="0 = no limit.">
@@ -148,8 +154,9 @@ export function TableSettings({
           />
         </div>
         <p className="mt-4 text-sm text-ink-400">
-          A qualifying paid card has a {Math.round(c.chancePerCard * 100)}% chance to carry one of the {c.symbols.length} symbols at random. Collecting all of
+          A qualifying paid {unit} has a {Math.round(c.chancePerCard * 100)}% chance to carry one of the {c.symbols.length} symbols at random. Collecting all of
           them pays the reward and starts a new set.
+          {isle && ' On Fortune Isle, island-themed symbols (Shell, Pearl, Map, Compass) read best.'}
         </p>
       </Card>
     );
@@ -277,6 +284,7 @@ export function TableSettings({
         <p className="mt-4 text-sm text-ink-400">
           When the ball lands on the lucky number, players with a straight-up bet on it of at least the min qualifying stake win{' '}
           {formatMoney(l.prize)} on top of the table payout.
+          {isle && ' Fortune Isle shows the lucky number on its roulette table.'}
         </p>
       </Card>
     );

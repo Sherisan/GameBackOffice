@@ -13,8 +13,13 @@ export interface User {
   lastLoginAt: string | null;
 }
 
-export type Engine = 'Instant' | 'LiveCrash' | 'MarginCall' | 'Roulette' | 'Custom' | 'Blackjack' | 'Defuse' | 'Vault' | 'Dive';
-export const ENGINES: Engine[] = ['Instant', 'LiveCrash', 'MarginCall', 'Roulette', 'Blackjack', 'Defuse', 'Vault', 'Dive', 'Custom'];
+export type Engine =
+  | 'Instant' | 'LiveCrash' | 'MarginCall' | 'Roulette' | 'Custom' | 'Blackjack' | 'Defuse' | 'Vault' | 'Dive'
+  // Engines whose games are set up in the API's config (not created here): JUICE RUSH, HIVE MIND, the ladder games, FORTUNE ISLE.
+  | 'Fruit' | 'Hive' | 'Ladder' | 'Island';
+/** Engines a game can be created with here (New game). */
+export type CreatableEngine = Exclude<Engine, 'Fruit' | 'Hive' | 'Ladder' | 'Island'>;
+export const ENGINES: CreatableEngine[] = ['Instant', 'LiveCrash', 'MarginCall', 'Roulette', 'Blackjack', 'Defuse', 'Vault', 'Dive', 'Custom'];
 
 /** Blackjack table rules (Engine Blackjack). */
 export interface BlackjackSettings {

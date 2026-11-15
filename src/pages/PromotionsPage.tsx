@@ -117,7 +117,14 @@ export function PromotionsPage() {
                       </Link>
                       <div className="mt-0.5 text-xs text-ink-400">{promoLabel(p.type as PromoType)}</div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-ink-300">{p.gameIds.join(', ')}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-ink-300">
+                      {p.gameIds.join(', ')}
+                      {(p.subGames?.length ?? 0) > 0 && (
+                        <div className="mt-0.5 font-sans text-ink-400" title={p.subGames!.join(', ')}>
+                          {p.subGames!.length} attraction{p.subGames!.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-xs text-ink-300">
                       <div>{p.startsAt ? `From ${formatWhen(p.startsAt)}` : 'From when switched on'}</div>
                       <div className="text-ink-400">{p.endsAt ? `Until ${formatWhen(p.endsAt)}` : 'No end date'}</div>

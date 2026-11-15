@@ -27,7 +27,8 @@ export type LeaderboardMetric = 'BestMultiple' | 'BestWin' | 'TotalWagered' | 'T
 export type PromoFamily = 'Any game' | 'Crash games' | 'Card games' | 'Roulette' | 'Blackjack';
 
 const CRASH: Engine[] = ['Custom', 'LiveCrash', 'MarginCall'];
-const ALL: Engine[] = [...CRASH, 'Instant', 'Roulette', 'Blackjack'];
+/** Fortune Isle (Engine Island): nine attractions behind one launch; promotions can be narrowed to some (subGames). */
+const ALL: Engine[] = [...CRASH, 'Instant', 'Roulette', 'Blackjack', 'Island'];
 
 export const PROMO_TYPES: { type: PromoType; label: string; family: PromoFamily; engines: Engine[]; blurb: string }[] = [
   { type: 'FreeBet', label: 'Free bets / cards / chips', family: 'Any game', engines: ALL, blurb: 'Free bets given to players. Roulette chips can be limited to some bet types.' },
@@ -35,14 +36,14 @@ export const PROMO_TYPES: { type: PromoType; label: string; family: PromoFamily;
   { type: 'MultiplierLeaderboard', label: 'Leaderboard', family: 'Any game', engines: ALL, blurb: 'Players rank by best multiple, best win, wagering, wins, rounds or special hits.' },
   { type: 'MultiplierRace', label: 'Multiplier race', family: 'Any game', engines: ALL, blurb: 'The first players to win at or above a target multiple get a prize.' },
   { type: 'Rain', label: 'Rain', family: 'Any game', engines: ALL, blurb: 'At random times a pool is split among players who bet recently.' },
-  { type: 'StreakMission', label: 'Streak mission', family: 'Any game', engines: ['Instant', 'Roulette', 'Blackjack'], blurb: 'A reward for N plays — or N wins — in a row.' },
+  { type: 'StreakMission', label: 'Streak mission', family: 'Any game', engines: ['Instant', 'Roulette', 'Blackjack', 'Island'], blurb: 'A reward for N plays — or N wins — in a row.' },
   { type: 'RoundDrop', label: 'Round drops', family: 'Crash games', engines: CRASH, blurb: 'Each round has a chance that random players in it win cash or a free bet.' },
   { type: 'CommunityJackpot', label: 'Community jackpot', family: 'Crash games', engines: CRASH, blurb: 'A crash at or above the trigger shares a pool among everyone in that round.' },
-  { type: 'MysteryPrize', label: 'Mystery prize', family: 'Card games', engines: ['Instant'], blurb: 'A qualifying card has a chance to reveal a hidden prize.' },
-  { type: 'BuyXGetFree', label: 'Buy X, get one free', family: 'Card games', engines: ['Instant'], blurb: 'Every X paid cards earns a free card at that card\'s price.' },
-  { type: 'CollectionMission', label: 'Collection mission', family: 'Card games', engines: ['Instant'], blurb: 'Cards carry symbols; collecting the whole set unlocks a reward.' },
-  { type: 'LuckyNumber', label: 'Lucky number', family: 'Roulette', engines: ['Roulette'], blurb: 'A prize when the lucky number hits and the player has a straight-up bet on it.' },
-  { type: 'BoostedPayout', label: 'Boosted payouts', family: 'Roulette', engines: ['Roulette'], blurb: 'Straight-up wins on chosen numbers pay more — the extra comes from the promotion.' },
+  { type: 'MysteryPrize', label: 'Mystery prize', family: 'Card games', engines: ['Instant', 'Island'], blurb: 'A qualifying card (or Fortune Isle play) has a chance to reveal a hidden prize.' },
+  { type: 'BuyXGetFree', label: 'Buy X, get one free', family: 'Card games', engines: ['Instant', 'Island'], blurb: 'Every X paid cards (or Fortune Isle plays) earn a free one at that price.' },
+  { type: 'CollectionMission', label: 'Collection mission', family: 'Card games', engines: ['Instant', 'Island'], blurb: 'Cards (or Fortune Isle plays) carry symbols; collecting the whole set unlocks a reward.' },
+  { type: 'LuckyNumber', label: 'Lucky number', family: 'Roulette', engines: ['Roulette', 'Island'], blurb: 'A prize when the lucky number hits and the player has a straight-up bet on it. Also Fortune Isle\'s roulette.' },
+  { type: 'BoostedPayout', label: 'Boosted payouts', family: 'Roulette', engines: ['Roulette', 'Island'], blurb: 'Straight-up wins on chosen numbers pay more — the extra comes from the promotion. Also Fortune Isle\'s roulette.' },
   { type: 'HandBonus', label: 'Hand bonus', family: 'Blackjack', engines: ['Blackjack'], blurb: 'A fixed prize for a special hand — suited blackjack, suited 7s, …' },
   { type: 'HandJackpot', label: 'Hand jackpot', family: 'Blackjack', engines: ['Blackjack'], blurb: 'A special hand wins a share of the day\'s jackpot pool.' },
 ];
@@ -51,6 +52,20 @@ export const PROMO_FAMILIES: PromoFamily[] = ['Any game', 'Crash games', 'Card g
 
 export const promoLabel = (t: PromoType) => PROMO_TYPES.find((p) => p.type === t)?.label ?? t;
 export const enginesFor = (t: PromoType) => PROMO_TYPES.find((p) => p.type === t)?.engines ?? ALL;
+/** True when promotions of this type can run on Fortune Isle. */
+export const runsOnIsland = (t: PromoType) => enginesFor(t).includes('Island');
+
+/** A Fortune Isle attraction, as api/backoffice/promotions/games lists it. hit: what counts as a "hit" there. */
+export interface SubGame {
+  key: string;
+  name: string;
+  zone: string;
+  kind: 'instant' | 'steps' | 'crash';
+  hit: string;
+}
+export const ISLAND_ZONES: Record<string, string> = {
+  boardwalk: 'Boardwalk', fairground: 'Fairground', casino: 'Grand Casino', jungle: 'Jungle Ruins', volcano: 'Volcano Summit',
+};
 
 export const SPECIAL_HANDS: { hand: SpecialHand; label: string }[] = [
   { hand: 'Blackjack', label: 'Any blackjack' },
@@ -175,6 +190,8 @@ export interface Promotion {
   type: PromoType;
   enabled: boolean;
   gameIds: string[];
+  /** Fortune Isle: the attractions it counts in (and where its free plays can be used). Empty = all of them. */
+  subGames: string[];
   /** ISO, UTC. */
   startsAt: string | null;
   endsAt: string | null;
@@ -204,6 +221,7 @@ export interface PromotionSummary {
   type: PromoType;
   enabled: boolean;
   gameIds: string[];
+  subGames?: string[];
   startsAt: string | null;
   endsAt: string | null;
   budget: number;
@@ -244,6 +262,8 @@ export interface PromoGame {
   name: string;
   engine: Engine;
   enabled: boolean;
+  /** Fortune Isle only: its attractions. */
+  subGames?: SubGame[] | null;
 }
 
 export interface PromotionChange {
@@ -298,6 +318,7 @@ export function newPromotion(type: PromoType): Promotion {
     type,
     enabled: false,
     gameIds: [],
+    subGames: [],
     startsAt: null,
     endsAt: null,
     budget: 1000,

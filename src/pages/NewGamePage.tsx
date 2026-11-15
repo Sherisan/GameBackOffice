@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api, ApiError } from '../api/client';
-import type { Engine, GameBody, RngModel } from '../api/types';
+import type { CreatableEngine as Engine, GameBody, RngModel } from '../api/types';
 import { ENGINES } from '../api/types';
 import { BlackjackForm, LiveCrashForm, RouletteForm } from '../components/EngineSettings';
 import { GeneralForm } from '../components/GeneralForm';

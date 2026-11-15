@@ -1,4 +1,4 @@
-import { enginesFor, LEADERBOARD_METRICS, type LeaderboardMetric, type PromoGame, type Promotion } from '../api/promoTypes';
+import { enginesFor, ISLAND_ZONES, LEADERBOARD_METRICS, type LeaderboardMetric, type PromoGame, type Promotion } from '../api/promoTypes';
 import { ROULETTE_BET_TYPES } from '../lib/gameBody';
 import { formatMoney } from '../lib/rtp';
 import { TableSettings } from './TablePromoSettings';
@@ -54,8 +54,12 @@ export function PromotionForm({
   readOnly: boolean;
 }) {
   const set = (patch: Partial<Promotion>) => onChange({ ...promo, ...patch });
-  const toggleGame = (gameId: string, on: boolean) =>
-    set({ gameIds: on ? [...promo.gameIds, gameId] : promo.gameIds.filter((g) => g !== gameId) });
+  const toggleGame = (gameId: string, on: boolean) => {
+    const gameIds = on ? [...promo.gameIds, gameId] : promo.gameIds.filter((g) => g !== gameId);
+    // Attractions only mean something with Fortune Isle picked; the API refuses them otherwise.
+    const isle = games.some((g) => g.engine === 'Island' && gameIds.includes(g.gameId));
+    set({ gameIds, subGames: isle ? promo.subGames ?? [] : [] });
+  };
 
   return (
     <div className="space-y-6">
@@ -107,11 +111,13 @@ export function PromotionForm({
               >
                 <input type="checkbox" className="accent-[#4f8cff]" checked={on} disabled={readOnly} onChange={(e) => toggleGame(g.gameId, e.target.checked)} />
                 {g.name}
+                {g.engine === 'Island' && <span className="text-xs text-ink-400">(9 attractions)</span>}
                 {!g.enabled && <span className="text-xs text-ink-400">(disabled)</span>}
               </label>
             );
           })}
         </div>
+        <IslandAttractions promo={promo} games={games} set={set} readOnly={readOnly} />
       </Card>
 
       <TypeSettings promo={promo} set={set} readOnly={readOnly} games={games} />
@@ -120,9 +126,89 @@ export function PromotionForm({
   );
 }
 
+/**
+ * Fortune Isle: which of its attractions the promotion counts in (and where its free plays can be used). None picked
+ * = every attraction, which is how it's stored (subGames: []).
+ */
+function IslandAttractions({ promo, games, set, readOnly }: { promo: Promotion; games: PromoGame[]; set: (p: Partial<Promotion>) => void; readOnly: boolean }) {
+  const isle = games.find((g) => g.engine === 'Island' && promo.gameIds.includes(g.gameId) && g.subGames?.length);
+  if (!isle) return null;
+  const list = isle.subGames!;
+  const picked = promo.subGames ?? [];
+  const every = picked.length === 0;
+  const on = (key: string) => every || picked.includes(key);
+  const toggle = (key: string, value: boolean) => {
+    const current = every ? list.map((a) => a.key) : picked;
+    const next = value ? [...current, key] : current.filter((k) => k !== key);
+    if (next.length === 0) return; // at least one; "every attraction" is the button below
+    set({ subGames: next.length === list.length ? [] : list.map((a) => a.key).filter((k) => next.includes(k)) });
+  };
+  const zones = [...new Set(list.map((a) => a.zone))];
+  const hits = promo.leaderboard?.metric === 'Hits';
+  const rouletteOnly = promo.type === 'LuckyNumber' || promo.type === 'BoostedPayout';
+  const rouletteMissing = rouletteOnly && !on('roulette');
+  const freeBets = promo.type === 'FreeBet' || ['drop', 'mystery', 'collection', 'streak'].some((k) => (promo as unknown as Record<string, { prize?: string } | null>)[k]?.prize === 'FreeBet') || promo.type === 'BuyXGetFree';
+
+  return (
+    <div className="mt-5 rounded-md border border-ink-700 bg-ink-950/60 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-xs font-medium uppercase tracking-wide text-ink-400">{isle.name} attractions</div>
+          <p className="mt-1 text-sm text-ink-400">
+            {every ? 'Counts on every attraction.' : `Counts on ${picked.length} of ${list.length} attractions — plays elsewhere on the island don't count.`}
+            {freeBets && ' Its free plays can only be used on these.'}
+          </p>
+        </div>
+        {!every && !readOnly && (
+          <button type="button" className="text-sm text-accent hover:underline" onClick={() => set({ subGames: [] })}>
+            Every attraction
+          </button>
+        )}
+      </div>
+      <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {zones.map((z) => (
+          <div key={z}>
+            <div className="mb-1.5 text-xs text-ink-400">{ISLAND_ZONES[z] ?? z}</div>
+            <div className="space-y-1.5">
+              {list.filter((a) => a.zone === z).map((a) => {
+                const checked = on(a.key);
+                const dim = rouletteOnly && a.key !== 'roulette';
+                return (
+                  <label
+                    key={a.key}
+                    className={`flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-sm ${
+                      checked ? 'border-accent bg-accent/10 text-ink-100' : 'border-ink-700 bg-ink-950 text-ink-300'
+                    } ${readOnly ? 'cursor-not-allowed opacity-70' : ''} ${dim ? 'opacity-60' : ''}`}
+                  >
+                    <input type="checkbox" className="mt-0.5 accent-[#4f8cff]" checked={checked} disabled={readOnly} onChange={(e) => toggle(a.key, e.target.checked)} />
+                    <span>
+                      {a.name}
+                      {a.kind !== 'instant' && <span className="ml-1 text-xs text-ink-400">({a.kind === 'crash' ? 'crash' : 'steps'})</span>}
+                      {hits && <span className="block text-xs text-ink-400">Hit: {a.hit}</span>}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      {rouletteOnly && (
+        <p className={`mt-3 text-sm ${rouletteMissing ? 'text-red-300' : 'text-ink-400'}`}>
+          {rouletteMissing
+            ? 'This promotion only plays on Roulette — tick Roulette, or it will be refused.'
+            : 'Only Roulette counts on the island for this type; the other attractions are ignored.'}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function TypeSettings({ promo, set, readOnly, games }: { promo: Promotion; set: (p: Partial<Promotion>) => void; readOnly: boolean; games: PromoGame[] }) {
   const int = (v: number | null) => Math.round(v ?? 0);
-  const roulette = games.some((g) => g.engine === 'Roulette' && promo.gameIds.includes(g.gameId));
+  const isle = games.some((g) => g.engine === 'Island' && promo.gameIds.includes(g.gameId));
+  const isleRoulette = isle && ((promo.subGames ?? []).length === 0 || promo.subGames.includes('roulette'));
+  const roulette = isleRoulette || games.some((g) => g.engine === 'Roulette' && promo.gameIds.includes(g.gameId));
 
   if (promo.freeBet) {
     const f = promo.freeBet;
@@ -165,6 +251,7 @@ function TypeSettings({ promo, set, readOnly, games }: { promo: Promotion; set: 
           {f.grant === 'Manual'
             ? 'Give them to players from the Free bets tab once the promotion is saved.'
             : 'Every player gets them the first time they open one of the games while the promotion is live.'}{' '}
+          {isle && 'On Fortune Isle a free bet is a free play at its value, on any attraction it counts on (roulette: the bets must add up to it). '}
           Example: a {formatMoney(f.stake)} free bet cashed out at 3× pays{' '}
           {formatMoney(f.stakeReturned ? f.stake * 3 : f.stake * 2)}.
         </p>
@@ -254,6 +341,7 @@ function TypeSettings({ promo, set, readOnly, games }: { promo: Promotion; set: 
         <p className="mt-4 text-sm text-ink-400">
           Players rank by {metricLabel(l.metric).toLowerCase()}, counting real-money play of at least the min qualifying stake. Free bets
           don't count.
+          {isle && l.metric === 'Hits' && ' On Fortune Isle a hit is each attraction\'s top result — shown under each attraction above.'}
           {l.period === 'Once' && ' Prizes are paid when the promotion ends.'} {l.prizes.length} prize{l.prizes.length === 1 ? '' : 's'} totalling{' '}
           {formatMoney(l.prizes.reduce((a, b) => a + b, 0))} per period.
         </p>
