@@ -111,7 +111,7 @@ export function PromotionForm({
               >
                 <input type="checkbox" className="accent-[#4f8cff]" checked={on} disabled={readOnly} onChange={(e) => toggleGame(g.gameId, e.target.checked)} />
                 {g.name}
-                {g.engine === 'Island' && <span className="text-xs text-ink-400">(9 attractions)</span>}
+                {g.engine === 'Island' && <span className="text-xs text-ink-400">({g.subGames?.length ?? 12} attractions)</span>}
                 {!g.enabled && <span className="text-xs text-ink-400">(disabled)</span>}
               </label>
             );

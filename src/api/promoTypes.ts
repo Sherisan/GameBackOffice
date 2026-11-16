@@ -27,7 +27,7 @@ export type LeaderboardMetric = 'BestMultiple' | 'BestWin' | 'TotalWagered' | 'T
 export type PromoFamily = 'Any game' | 'Crash games' | 'Card games' | 'Roulette' | 'Blackjack';
 
 const CRASH: Engine[] = ['Custom', 'LiveCrash', 'MarginCall'];
-/** Fortune Isle (Engine Island): nine attractions behind one launch; promotions can be narrowed to some (subGames). */
+/** Fortune Isle (Engine Island): twelve attractions behind one launch; promotions can be narrowed to some (subGames). */
 const ALL: Engine[] = [...CRASH, 'Instant', 'Roulette', 'Blackjack', 'Island'];
 
 export const PROMO_TYPES: { type: PromoType; label: string; family: PromoFamily; engines: Engine[]; blurb: string }[] = [
@@ -64,7 +64,7 @@ export interface SubGame {
   hit: string;
 }
 export const ISLAND_ZONES: Record<string, string> = {
-  boardwalk: 'Boardwalk', fairground: 'Fairground', casino: 'Grand Casino', jungle: 'Jungle Ruins', volcano: 'Volcano Summit',
+  harbour: 'Harbour (Rusty Anchor)', boardwalk: 'Boardwalk', fairground: 'Fairground', casino: 'Grand Casino', jungle: 'Jungle Ruins', volcano: 'Volcano Summit',
 };
 
 export const SPECIAL_HANDS: { hand: SpecialHand; label: string }[] = [
