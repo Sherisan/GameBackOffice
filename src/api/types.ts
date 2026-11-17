@@ -15,10 +15,11 @@ export interface User {
 
 export type Engine =
   | 'Instant' | 'LiveCrash' | 'MarginCall' | 'Roulette' | 'Custom' | 'Blackjack' | 'Defuse' | 'Vault' | 'Dive'
-  // Engines whose games are set up in the API's config (not created here): JUICE RUSH, HIVE MIND, the ladder games, FORTUNE ISLE.
-  | 'Fruit' | 'Hive' | 'Ladder' | 'Island';
+  // Engines whose games are set up in the API's config (not created here): JUICE RUSH, HIVE MIND, the ladder games, FORTUNE ISLE,
+  // JOLLY ROLL (Board: its board and payouts are a rules file shipped with the API, so a new Board game needs API work).
+  | 'Fruit' | 'Hive' | 'Ladder' | 'Island' | 'Board';
 /** Engines a game can be created with here (New game). */
-export type CreatableEngine = Exclude<Engine, 'Fruit' | 'Hive' | 'Ladder' | 'Island'>;
+export type CreatableEngine = Exclude<Engine, 'Fruit' | 'Hive' | 'Ladder' | 'Island' | 'Board'>;
 export const ENGINES: CreatableEngine[] = ['Instant', 'LiveCrash', 'MarginCall', 'Roulette', 'Blackjack', 'Defuse', 'Vault', 'Dive', 'Custom'];
 
 /** Blackjack table rules (Engine Blackjack). */
