@@ -56,6 +56,7 @@ export const DEFAULT_LIVE: LiveCrashSettings = {
   maxBetsPerPlayer: 2,
   minAutoCashOut: 1.01,
   historySize: 30,
+  revealSeedEachRound: false,
 };
 
 /** Roulette bet types the API knows (Domain/Roulette/RouletteTable). */

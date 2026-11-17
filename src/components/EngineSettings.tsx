@@ -1,7 +1,7 @@
 import type { BlackjackSettings, LiveCrashSettings, RouletteSettings } from '../api/types';
 import { formatMoney } from '../lib/rtp';
 import { ROULETTE_BET_TYPES } from '../lib/gameBody';
-import { Card, Field, NumberInput, Select } from './ui';
+import { Card, Field, NumberInput, Select, Toggle } from './ui';
 
 // Engine-specific settings: live crash round timing and roulette table limits.
 
@@ -37,6 +37,12 @@ export function LiveCrashForm({ live, onChange, readOnly }: { live: LiveCrashSet
         </Field>
         <Field label="History size" hint="Past crash points kept for the ticker.">
           <NumberInput value={live.historySize} disabled={readOnly} onChange={(v) => set({ historySize: Math.round(v ?? 0) })} />
+        </Field>
+        <Field
+          label="Reveal seed each round"
+          hint={live.revealSeedEachRound ? 'Every round is verifiable as soon as it crashes.' : 'Off: the seed is revealed every "Rotate seed every" rounds.'}
+        >
+          <Toggle checked={!!live.revealSeedEachRound} disabled={readOnly} onChange={(v) => set({ revealSeedEachRound: v })} label="Reveal seed each round" />
         </Field>
       </div>
     </Card>

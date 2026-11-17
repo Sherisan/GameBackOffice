@@ -70,6 +70,8 @@ export interface LiveCrashSettings {
   maxBetsPerPlayer: number;
   minAutoCashOut: number;
   historySize: number;
+  /** Reveal each round's server seed when it crashes and start the next round on a fresh seed. */
+  revealSeedEachRound?: boolean;
 }
 
 export interface RouletteSettings {
